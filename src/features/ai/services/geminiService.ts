@@ -9,18 +9,18 @@ import type {
 
 const API_KEY_STORAGE_KEY = "voice_notes_gemini_api_key";
 
-function getApiKey(): string {
-  // Check localStorage first (user setting), then env variable
-  const key =
-    localStorage.getItem(API_KEY_STORAGE_KEY) ||
-    import.meta.env.VITE_GEMINI_API_KEY;
-  if (!key) {
-    throw new Error(
-      "Gemini API key not configured. Please add it in Settings or .env file.",
-    );
-  }
-  return key;
-}
+// function getApiKey(): string {
+//   // Check localStorage first (user setting), then env variable
+//   const key =
+//     localStorage.getItem(API_KEY_STORAGE_KEY) ||
+//     import.meta.env.VITE_GEMINI_API_KEY;
+//   if (!key) {
+//     throw new Error(
+//       "Gemini API key not configured. Please add it in Settings or .env file.",
+//     );
+//   }
+//   return key;
+// }
 
 export function setApiKey(key: string): void {
   localStorage.setItem(API_KEY_STORAGE_KEY, key);
