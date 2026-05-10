@@ -28,9 +28,10 @@ export function setApiKey(key: string): void {
 
 export function getStoredApiKey(): string | null {
   return (
-    localStorage.getItem(API_KEY_STORAGE_KEY) ||
-    import.meta.env.VITE_GEMINI_API_KEY ||
-    null
+    // localStorage.getItem(API_KEY_STORAGE_KEY) ||
+    // import.meta.env.VITE_GEMINI_API_KEY ||
+    // null
+    "its_a_dummy_api_key_:D"
   );
 }
 
@@ -71,11 +72,11 @@ Rules:
 export async function structureNote(
   transcription: string,
 ): Promise<Pick<Note, "title" | "summary" | "tasks" | "facts" | "questions">> {
-  const apiKey = getApiKey();
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
   const genAI = new GoogleGenAI({ apiKey });
 
   const response = await genAI.models.generateContent({
-    model: "gemini-2.0-flash-lite",
+    model: "gemini-2.5-flash",
     contents: `${STRUCTURING_PROMPT}\n\nTranscription:\n"""\n${transcription}\n"""`,
     config: {
       maxOutputTokens: 2048,

@@ -1,12 +1,12 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, Square } from 'lucide-react';
-import { useSpeechRecognition } from '@/features/recorder/hooks/useSpeechRecognition';
-import { PulseRings } from './PulseRings';
-import { TranscriptionPreview } from './TranscriptionPreview';
-import { CircularProgress } from './CircularProgress';
-import { ProcessingIndicator } from './ProcessingIndicator';
-import type { RecordingState } from '@/types';
+import { useState, useCallback, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Mic, Square } from "lucide-react";
+import { useSpeechRecognition } from "@/features/recorder/hooks/useSpeechRecognition";
+import { PulseRings } from "./PulseRings";
+import { TranscriptionPreview } from "./TranscriptionPreview";
+import { CircularProgress } from "./CircularProgress";
+import { ProcessingIndicator } from "./ProcessingIndicator";
+import type { RecordingState } from "@/types";
 
 interface RecorderProps {
   onTranscriptionComplete: (text: string) => void;
@@ -15,7 +15,7 @@ interface RecorderProps {
 const MAX_RECORDING_SECONDS = 300;
 
 export function Recorder({ onTranscriptionComplete }: RecorderProps) {
-  const [recordingState, setRecordingState] = useState<RecordingState>('idle');
+  const [recordingState, setRecordingState] = useState<RecordingState>("idle");
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -32,7 +32,7 @@ export function Recorder({ onTranscriptionComplete }: RecorderProps) {
 
   useEffect(() => {
     if (isListening) {
-      setRecordingState('recording');
+      setRecordingState("recording");
       setElapsedSeconds(0);
       timerRef.current = setInterval(() => {
         setElapsedSeconds((prev) => {
@@ -53,8 +53,8 @@ export function Recorder({ onTranscriptionComplete }: RecorderProps) {
   }, [isListening]);
 
   useEffect(() => {
-    if (error && recordingState !== 'idle') {
-      setRecordingState('idle');
+    if (error && recordingState !== "idle") {
+      setRecordingState("idle");
       resetTranscript();
       setElapsedSeconds(0);
     }
@@ -74,24 +74,24 @@ export function Recorder({ onTranscriptionComplete }: RecorderProps) {
     stopListening();
     const fullText = transcript + interimTranscript;
     if (fullText.trim()) {
-      setRecordingState('processing');
+      setRecordingState("processing");
       onTranscriptionComplete(fullText.trim());
     } else {
-      setRecordingState('idle');
+      setRecordingState("idle");
     }
   }, [stopListening, transcript, interimTranscript, onTranscriptionComplete]);
 
   const handleToggle = useCallback(() => {
-    if (recordingState === 'idle') {
+    if (recordingState === "idle") {
       handleStart();
-    } else if (recordingState === 'recording') {
+    } else if (recordingState === "recording") {
       handleStop();
     }
   }, [recordingState, handleStart, handleStop]);
 
   const progress = elapsedSeconds / MAX_RECORDING_SECONDS;
-  const isRecording = recordingState === 'recording';
-  const isProcessing = recordingState === 'processing';
+  const isRecording = recordingState === "recording";
+  const isProcessing = recordingState === "processing";
 
   if (!isSupported) {
     return (
@@ -116,11 +116,11 @@ export function Recorder({ onTranscriptionComplete }: RecorderProps) {
           whileHover={!isProcessing ? { scale: 1.08 } : {}}
           whileTap={!isProcessing ? { scale: 0.92 } : {}}
           animate={{
-            backgroundColor: isRecording ? '#E07A5F' : '#9B8EC7',
+            backgroundColor: isRecording ? "#E07A5F" : "#9B8EC7",
           }}
           transition={{ duration: 0.3 }}
-          className="relative z-10 w-16 h-16 rounded-full flex items-center justify-center shadow-[0_4px_24px_rgba(155,142,199,0.3)]"
-          aria-label={isRecording ? 'Stop recording' : 'Start recording'}
+          className="relative z-9 w-16 h-16 rounded-full flex items-center justify-center shadow-[0_4px_24px_rgba(155,142,199,0.3)]"
+          aria-label={isRecording ? "Stop recording" : "Start recording"}
           disabled={isProcessing}
         >
           <AnimatePresence mode="wait">
@@ -195,5 +195,5 @@ export function Recorder({ onTranscriptionComplete }: RecorderProps) {
 function formatTime(seconds: number): string {
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
-  return `${mins}:${secs.toString().padStart(2, '0')}`;
+  return `${mins}:${secs.toString().padStart(2, "0")}`;
 }
