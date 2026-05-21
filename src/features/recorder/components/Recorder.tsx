@@ -9,7 +9,7 @@ import { ProcessingIndicator } from "./ProcessingIndicator";
 import type { RecordingState } from "@/types";
 
 interface RecorderProps {
-  onTranscriptionComplete: (text: string) => void;
+  onTranscriptionComplete: (text: string) => Promise<void>;
 }
 
 const MAX_RECORDING_SECONDS = 300;
@@ -18,6 +18,7 @@ export function Recorder({ onTranscriptionComplete }: RecorderProps) {
   const [recordingState, setRecordingState] = useState<RecordingState>("idle");
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const handleStopRef = useRef<() => Promise<void>>(async () => {});
 
   const {
     isSupported,
@@ -30,14 +31,23 @@ export function Recorder({ onTranscriptionComplete }: RecorderProps) {
     error,
   } = useSpeechRecognition();
 
+  // Fix Bug 2: stop mic on unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      stopListening();
+    };
+  }, []);
+
   useEffect(() => {
     if (isListening) {
       setRecordingState("recording");
       setElapsedSeconds(0);
       timerRef.current = setInterval(() => {
         setElapsedSeconds((prev) => {
+          // Fix Bug 1: use ref instead of direct handleStop to avoid stale closure
           if (prev >= MAX_RECORDING_SECONDS - 1) {
-            handleStop();
+            handleStopRef.current();
             return prev;
           }
           return prev + 1;
@@ -52,8 +62,9 @@ export function Recorder({ onTranscriptionComplete }: RecorderProps) {
     };
   }, [isListening]);
 
+  // Fix Bug 5: ignore errors during processing to avoid race condition
   useEffect(() => {
-    if (error && recordingState !== "idle") {
+    if (error && recordingState === "recording") {
       setRecordingState("idle");
       resetTranscript();
       setElapsedSeconds(0);
@@ -66,7 +77,7 @@ export function Recorder({ onTranscriptionComplete }: RecorderProps) {
     startListening();
   }, [resetTranscript, startListening]);
 
-  const handleStop = useCallback(() => {
+  const handleStop = useCallback(async () => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
@@ -74,12 +85,23 @@ export function Recorder({ onTranscriptionComplete }: RecorderProps) {
     stopListening();
     const fullText = transcript + interimTranscript;
     if (fullText.trim()) {
-      setRecordingState("processing");
-      onTranscriptionComplete(fullText.trim());
+      // used try/finally so state always resets even if throws
+      try {
+        setRecordingState("processing");
+        await onTranscriptionComplete(fullText.trim());
+      } finally {
+        setRecordingState("idle");
+        resetTranscript();
+      }
     } else {
       setRecordingState("idle");
     }
   }, [stopListening, transcript, interimTranscript, onTranscriptionComplete]);
+
+  // Fix Bug 1: keep ref in sync with latest handleStop
+  useEffect(() => {
+    handleStopRef.current = handleStop;
+  }, [handleStop]);
 
   const handleToggle = useCallback(() => {
     if (recordingState === "idle") {
@@ -111,6 +133,7 @@ export function Recorder({ onTranscriptionComplete }: RecorderProps) {
 
         {isRecording && <CircularProgress progress={progress} />}
 
+        {/* Fix Bug 4: z-9 → z-10 */}
         <motion.button
           onClick={handleToggle}
           whileHover={!isProcessing ? { scale: 1.08 } : {}}
@@ -119,7 +142,7 @@ export function Recorder({ onTranscriptionComplete }: RecorderProps) {
             backgroundColor: isRecording ? "#E07A5F" : "#9B8EC7",
           }}
           transition={{ duration: 0.3 }}
-          className="relative z-9 w-16 h-16 rounded-full flex items-center justify-center shadow-[0_4px_24px_rgba(155,142,199,0.3)]"
+          className="relative z-10 w-16 h-16 rounded-full flex items-center justify-center shadow-[0_4px_24px_rgba(155,142,199,0.3)]"
           aria-label={isRecording ? "Stop recording" : "Start recording"}
           disabled={isProcessing}
         >
